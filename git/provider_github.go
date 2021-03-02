@@ -88,24 +88,9 @@ func (g *github) CloneRepository(ctx context.Context, cloneURL string) (Reposito
 		return nil, err
 	}
 
-	return g.clone(ctx, &CloneOptions{
+	return Clone(ctx, &CloneOptions{
 		URL:  cloneURL,
 		Path: clonePath,
-	})
-}
-
-func (g *github) clone(ctx context.Context, opts *CloneOptions) (Repository, error) {
-	if opts == nil {
-		return nil, ErrNilOpts
-	}
-
-	auth := g.opts.Auth
-	if opts.Auth != nil {
-		auth = opts.Auth
-	}
-	return Clone(ctx, &CloneOptions{
-		URL:  opts.URL,
-		Path: opts.Path,
-		Auth: auth,
+		Auth: g.opts.Auth,
 	})
 }

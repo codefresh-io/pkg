@@ -1,4 +1,3 @@
-//go:generate mockery -name Provider
 //go:generate mockery -name Repository
 
 package git
@@ -10,10 +9,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/go-git/go-git/plumbing/transport"
 	gg "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
@@ -34,32 +33,6 @@ type (
 		Root() (string, error)
 	}
 
-	// Provider represents a git provider
-	Provider interface {
-		// CreateRepository creates the repository in the remote provider and returns a
-		// clone url
-		CreateRepository(ctx context.Context, opts *CreateRepoOptions) (string, error)
-
-		GetRepository(ctx context.Context, opts *GetRepoOptions) (string, error)
-
-		// CloneRepository tries to clone the repository and return it if it exists or
-		// ErrRepoNotFound if the repo does not exist
-		CloneRepository(ctx context.Context, cloneURL string) (Repository, error)
-	}
-
-	// Options for a new git provider
-	Options struct {
-		Type string
-		Auth *Auth
-		Host string
-	}
-
-	// Auth for git provider
-	Auth struct {
-		Username string
-		Password string
-	}
-
 	CloneOptions struct {
 		// URL clone url
 		URL string
@@ -73,17 +46,6 @@ type (
 		Auth       *Auth
 	}
 
-	CreateRepoOptions struct {
-		Owner   string
-		Name    string
-		Private bool
-	}
-
-	GetRepoOptions struct {
-		Owner string
-		Name  string
-	}
-
 	repo struct {
 		r *gg.Repository
 	}
@@ -91,9 +53,8 @@ type (
 
 // Errors
 var (
-	ErrNilOpts              = errors.New("options cannot be nil")
-	ErrProviderNotSupported = errors.New("git provider not supported")
-	ErrRepoNotFound         = errors.New("git repository not found")
+	ErrNilOpts      = errors.New("options cannot be nil")
+	ErrRepoNotFound = errors.New("git repository not found")
 )
 
 // go-git functions (we mock those in tests)
@@ -101,25 +62,6 @@ var (
 	plainClone = gg.PlainCloneContext
 	plainInit  = gg.PlainInit
 )
-
-// New creates a new git provider
-func NewProvider(opts *Options) (Provider, error) {
-	switch opts.Type {
-	case "github":
-		return newGithub(opts)
-	default:
-		return nil, ErrProviderNotSupported
-	}
-}
-
-func getRef(cloneURL string) string {
-	u, err := url.Parse(cloneURL)
-	if err != nil {
-		return ""
-	}
-
-	return u.Fragment
-}
 
 func Clone(ctx context.Context, opts *CloneOptions) (Repository, error) {
 	if opts == nil {
@@ -267,4 +209,13 @@ func getAuth(auth *Auth) transport.AuthMethod {
 	}
 
 	return nil
+}
+
+func getRef(cloneURL string) string {
+	u, err := url.Parse(cloneURL)
+	if err != nil {
+		return ""
+	}
+
+	return u.Fragment
 }
