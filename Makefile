@@ -1,6 +1,7 @@
 VER?=0.0.1
+YEAR?=$(shell date +"%Y")
 MODULES=$(shell find . -mindepth 2 -maxdepth 4 -type f -name 'go.mod' | cut -c 3- | sed 's|/[^/]*$$||' | sort -u | tr / :)
-targets=$(addprefix test-, $(MODULES))
+targets=$(addprefix pkg-, $(MODULES))
 root_dir=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 ifeq (,$(shell go env GOBIN))
@@ -9,8 +10,7 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-all:
-	$(MAKE) $(targets)
+all: $(targets) coverage.txt
 
 tidy-%:
 	cd $(subst :,/,$*); go mod tidy
@@ -22,10 +22,15 @@ vet-%:
 	cd $(subst :,/,$*); go vet ./...
 
 generate-%: controller-gen
-	cd $(subst :,/,$*); $(CONTROLLER_GEN) object:headerFile="$(root_dir)/hack/boilerplate.txt" paths="./..."; go generate ./...
+	cd $(subst :,/,$*); go generate ./...; go run ../hack/license.go --license $(root_dir)/hack/boilerplate.txt --year $(YEAR) $(root_dir)
 
-test-%: generate-% tidy-% lint-% vet-%
+test-%:
 	cd $(subst :,/,$*); ../hack/test.sh
+
+pkg-%: generate-% tidy-% lint-% vet-% test-%;
+
+coverage.txt:
+	./hack/test_pkg.sh
 
 # Find or download controller-gen
 controller-gen:

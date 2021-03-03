@@ -1,3 +1,16 @@
+// Copyright 2021 The Codefresh Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package git
 
 import (
@@ -101,6 +114,7 @@ func Test_Clone(t *testing.T) {
 	}
 
 	orig := plainClone
+
 	defer func() { plainClone = orig }()
 
 	for name, test := range tests {
@@ -110,6 +124,7 @@ func Test_Clone(t *testing.T) {
 			assert.Equal(t, test.expectedRefName, o.ReferenceName)
 			assert.Equal(t, 1, o.Depth)
 			assert.False(t, isBare)
+
 			if o.Auth != nil {
 				bauth, _ := o.Auth.(*http.BasicAuth)
 				assert.Equal(t, test.expectedPassword, bauth.Password)
@@ -117,6 +132,7 @@ func Test_Clone(t *testing.T) {
 
 			return nil, nil
 		}
+
 		t.Run(name, func(t *testing.T) {
 			_, _ = Clone(context.Background(), test.opts)
 		})
