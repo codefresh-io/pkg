@@ -25,12 +25,12 @@ generate-%: controller-gen
 	cd $(subst :,/,$*); go generate ./...; go run ../hack/license.go --license $(root_dir)/hack/boilerplate.txt --year $(YEAR) $(root_dir)
 
 test-%:
-	cd $(subst :,/,$*); ../hack/test.sh
+	cd $(subst :,/,$*); $(root_dir)/hack/test.sh
 
 pkg-%: generate-% tidy-% lint-% vet-% test-%;
 
 coverage.txt:
-	./hack/test_pkg.sh
+	$(root_dir)/hack/test_pkg.sh
 
 # Find or download controller-gen
 controller-gen:
