@@ -26,29 +26,6 @@ type Provider struct {
 	mock.Mock
 }
 
-// CloneRepository provides a mock function with given fields: ctx, cloneURL
-func (_m *Provider) CloneRepository(ctx context.Context, cloneURL string) (git.Repository, error) {
-	ret := _m.Called(ctx, cloneURL)
-
-	var r0 git.Repository
-	if rf, ok := ret.Get(0).(func(context.Context, string) git.Repository); ok {
-		r0 = rf(ctx, cloneURL)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(git.Repository)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, cloneURL)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // CreateRepository provides a mock function with given fields: ctx, opts
 func (_m *Provider) CreateRepository(ctx context.Context, opts *git.CreateRepoOptions) (string, error) {
 	ret := _m.Called(ctx, opts)

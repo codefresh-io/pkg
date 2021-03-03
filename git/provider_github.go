@@ -11,12 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package git
 
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 
 	"net/http"
 
@@ -98,17 +98,4 @@ func (g *github) CreateRepository(ctx context.Context, opts *CreateRepoOptions) 
 	}
 
 	return *r.CloneURL, err
-}
-
-func (g *github) CloneRepository(ctx context.Context, cloneURL string) (Repository, error) {
-	clonePath, err := ioutil.TempDir("", "repo-")
-	if err != nil {
-		return nil, err
-	}
-
-	return Clone(ctx, &CloneOptions{
-		URL:  cloneURL,
-		Path: clonePath,
-		Auth: g.opts.Auth,
-	})
 }

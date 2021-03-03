@@ -46,14 +46,6 @@ type (
 		Root() (string, error)
 	}
 
-	CloneOptions struct {
-		// URL clone url
-		URL string
-		// Path where to clone to
-		Path string
-		Auth *Auth
-	}
-
 	PushOptions struct {
 		RemoteName string
 		Auth       *Auth

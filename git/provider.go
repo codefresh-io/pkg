@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //go:generate mockery -name Provider
-//go:generate mockery -name Repository
 
 package git
 
@@ -29,10 +28,6 @@ type (
 		CreateRepository(ctx context.Context, opts *CreateRepoOptions) (string, error)
 
 		GetRepository(ctx context.Context, opts *GetRepoOptions) (string, error)
-
-		// CloneRepository tries to clone the repository and return it if it exists or
-		// ErrRepoNotFound if the repo does not exist
-		CloneRepository(ctx context.Context, cloneURL string) (Repository, error)
 	}
 
 	// Options for a new git provider
@@ -46,6 +41,14 @@ type (
 	Auth struct {
 		Username string
 		Password string
+	}
+
+	CloneOptions struct {
+		// URL clone url
+		URL string
+		// Path where to clone to
+		Path string
+		Auth *Auth
 	}
 
 	CreateRepoOptions struct {
