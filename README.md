@@ -1,4 +1,7 @@
-codefresh common go modules
+[![codecov](https://codecov.io/gh/codefresh-io/pkg/branch/main/graph/badge.svg?token=QDoYPir4QJ)](https://codecov.io/gh/codefresh-io/pkg)
+
+
+Codefresh common go modules
 
 ### Using [pre-commit](https://pre-commit.com/) hooks:
 When installed correctly, this will run `golangci-lint` before every commit, and `go test` before every push. Any error will cause the commit or push to fail.
