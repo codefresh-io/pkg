@@ -25,6 +25,7 @@ import (
 
 //go:generate interfacer -for github.com/google/go-github/v32/github.RepositoriesService -as github.Repositories -o github/repos.go
 //go:generate interfacer -for github.com/google/go-github/v32/github.UsersService -as github.Users -o github/users.go
+//go:generate mockery -dir github -all
 type github struct {
 	opts         *Options
 	Repositories g.Repositories
