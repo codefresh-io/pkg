@@ -17,15 +17,18 @@ package git
 import (
 	"context"
 	"fmt"
-
 	"net/http"
 
+	g "github.com/codefresh-io/pkg/git/github"
 	gh "github.com/google/go-github/v32/github"
 )
 
+//go:generate interfacer -for github.com/google/go-github/v32/github.RepositoriesService -as github.Repositories -o github/repos.go
+//go:generate interfacer -for github.com/google/go-github/v32/github.UsersService -as github.Users -o github/users.go
 type github struct {
-	opts   *Options
-	client *gh.Client
+	opts         *Options
+	Repositories g.Repositories
+	Users        g.Users
 }
 
 func newGithub(opts *Options) (Provider, error) {
@@ -53,15 +56,16 @@ func newGithub(opts *Options) (Provider, error) {
 	}
 
 	g := &github{
-		opts:   opts,
-		client: c,
+		opts:         opts,
+		Repositories: c.Repositories,
+		Users:        c.Users,
 	}
 
 	return g, nil
 }
 
 func (g *github) GetRepository(ctx context.Context, opts *GetRepoOptions) (string, error) {
-	r, res, err := g.client.Repositories.Get(ctx, opts.Owner, opts.Name)
+	r, res, err := g.Repositories.Get(ctx, opts.Owner, opts.Name)
 
 	if err != nil {
 		if res != nil && res.StatusCode == 404 {
@@ -75,7 +79,7 @@ func (g *github) GetRepository(ctx context.Context, opts *GetRepoOptions) (strin
 }
 
 func (g *github) CreateRepository(ctx context.Context, opts *CreateRepoOptions) (string, error) {
-	authUser, _, err := g.client.Users.Get(ctx, "") // get authenticated user details
+	authUser, _, err := g.Users.Get(ctx, "") // get authenticated user details
 	if err != nil {
 		return "", err
 	}
@@ -85,7 +89,7 @@ func (g *github) CreateRepository(ctx context.Context, opts *CreateRepoOptions) 
 		org = opts.Owner
 	}
 
-	r, _, err := g.client.Repositories.Create(ctx, org, &gh.Repository{
+	r, _, err := g.Repositories.Create(ctx, org, &gh.Repository{
 		Name:    gh.String(opts.Name),
 		Private: gh.Bool(opts.Private),
 	})

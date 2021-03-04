@@ -21,7 +21,7 @@ lint-%: $(GOPATH)/bin/golangci-lint
 vet-%:
 	cd $(subst :,/,$*); go vet ./...
 
-generate-%: controller-gen
+generate-%: $(GOPATH)/bin/interfacer
 	cd $(subst :,/,$*); go generate ./...; go run ../hack/license.go --license $(root_dir)/hack/boilerplate.txt --year $(YEAR) $(root_dir)
 
 test-%:
@@ -31,22 +31,6 @@ pkg-%: generate-% tidy-% lint-% vet-% test-%;
 
 coverage.txt:
 	$(root_dir)/hack/test_pkg.sh
-
-# Find or download controller-gen
-controller-gen:
-ifeq (, $(shell which controller-gen))
-	@{ \
-	set -e ;\
-	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$CONTROLLER_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0 ;\
-	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	}
-CONTROLLER_GEN=$(GOBIN)/controller-gen
-else
-CONTROLLER_GEN=$(shell which controller-gen)
-endif
 
 $(GOPATH)/bin/mockery:
 	@curl -L -o dist/mockery.tar.gz -- https://github.com/vektra/mockery/releases/download/v1.1.1/mockery_1.1.1_$(shell uname -s)_$(shell uname -m).tar.gz
@@ -59,3 +43,5 @@ $(GOPATH)/bin/mockery:
 $(GOPATH)/bin/golangci-lint:
 	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b `go env GOPATH`/bin v1.36.0
 
+$(GOPATH)/bin/interfacer:
+	GO111MODULE=on go get github.com/rjeczalik/interfaces/cmd/interfacer@v0.1.1
