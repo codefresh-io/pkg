@@ -37,7 +37,7 @@ $(GOBIN)/mockery:
 	mockery --version
 
 $(GOBIN)/golangci-lint:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b `go env GOBIN` v1.36.0
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.36.0
 
 $(GOBIN)/interfacer:
 	GO111MODULE=on go get github.com/rjeczalik/interfaces/cmd/interfacer@v0.1.1
