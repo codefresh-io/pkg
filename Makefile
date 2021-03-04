@@ -33,14 +33,11 @@ coverage.txt:
 	$(root_dir)/hack/test_pkg.sh
 
 $(GOBIN)/mockery:
-	@curl -L -o dist/mockery.tar.gz -- https://github.com/vektra/mockery/releases/download/v1.1.1/mockery_1.1.1_$(shell uname -s)_$(shell uname -m).tar.gz
-	@tar zxvf dist/mockery.tar.gz mockery
-	@chmod +x mockery
-	@mv mockery $(GOBIN)/mockery
-	@mockery -version
+	GO111MODULE=on go get github.com/vektra/mockery/v2@v2.5.1
+	mockery --version
 
 $(GOBIN)/golangci-lint:
-	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b `go env GOBIN` v1.36.0
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b `go env GOBIN` v1.36.0
 
 $(GOBIN)/interfacer:
 	GO111MODULE=on go get github.com/rjeczalik/interfaces/cmd/interfacer@v0.1.1
