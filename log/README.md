@@ -17,7 +17,8 @@ func main() {
 	
     ctx = log.WithLogger(ctx, lgr)
 
-	log.SetDefault(lgr) // if no context is provided to log.G() you will get this logger
+	log.SetDefault(lgr) // if no context is provided to log.G() or the context does 
+                        // not have a logger attached, you will get this logger.
 
 	cmd := root.New(ctx)
 	lgr.AddPFlags(cmd) // adds the logger flags to the command
