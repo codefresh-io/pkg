@@ -15,13 +15,13 @@ all: $(targets) coverage.txt
 tidy-%:
 	cd $(subst :,/,$*); go mod tidy
 
-lint-%: $(GOPATH)/bin/golangci-lint
+lint-%: $(GOBIN)/golangci-lint
 	cd $(subst :,/,$*); golangci-lint run --fix --timeout 3m
 
 vet-%:
 	cd $(subst :,/,$*); go vet ./...
 
-generate-%: $(GOPATH)/bin/interfacer
+generate-%: $(GOBIN)/interfacer $(GOBIN)/mockery
 	cd $(subst :,/,$*); go generate ./...; go run ../hack/license.go --license $(root_dir)/hack/boilerplate.txt --year $(YEAR) $(root_dir)
 
 test-%:
@@ -32,16 +32,15 @@ pkg-%: generate-% tidy-% lint-% vet-% test-%;
 coverage.txt:
 	$(root_dir)/hack/test_pkg.sh
 
-$(GOPATH)/bin/mockery:
+$(GOBIN)/mockery:
 	@curl -L -o dist/mockery.tar.gz -- https://github.com/vektra/mockery/releases/download/v1.1.1/mockery_1.1.1_$(shell uname -s)_$(shell uname -m).tar.gz
 	@tar zxvf dist/mockery.tar.gz mockery
 	@chmod +x mockery
-	@mkdir -p $(GOPATH)/bin
-	@mv mockery $(GOPATH)/bin/mockery
+	@mv mockery $(GOBIN)/mockery
 	@mockery -version
 
-$(GOPATH)/bin/golangci-lint:
-	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b `go env GOPATH`/bin v1.36.0
+$(GOBIN)/golangci-lint:
+	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b `go env GOBIN` v1.36.0
 
-$(GOPATH)/bin/interfacer:
+$(GOBIN)/interfacer:
 	GO111MODULE=on go get github.com/rjeczalik/interfaces/cmd/interfacer@v0.1.1
