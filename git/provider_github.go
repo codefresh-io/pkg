@@ -67,12 +67,11 @@ func newGithub(opts *Options) (Provider, error) {
 
 func (g *github) GetRepository(ctx context.Context, opts *GetRepoOptions) (string, error) {
 	r, res, err := g.Repositories.Get(ctx, opts.Owner, opts.Name)
+	if res != nil && res.StatusCode == http.StatusNotFound {
+		return "", ErrRepoNotFound
+	}
 
 	if err != nil {
-		if res != nil && res.StatusCode == 404 {
-			return "", ErrRepoNotFound
-		}
-
 		return "", err
 	}
 
