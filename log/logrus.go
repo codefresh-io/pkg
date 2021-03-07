@@ -51,6 +51,15 @@ func FromLogrus(l *logrus.Entry, c *LogrusConfig) Logger {
 	return &logrusAdapter{l, c}
 }
 
+func GetLogrusEntry(l Logger) (*logrus.Entry, error) {
+	adpt, ok := l.(*logrusAdapter)
+	if !ok {
+		return nil, fmt.Errorf("not a logrus logger")
+	}
+
+	return adpt.Entry, nil
+}
+
 func (l *logrusAdapter) AddPFlags(cmd *cobra.Command) {
 	flags := pflag.NewFlagSet("logrus", pflag.ContinueOnError)
 	flags.StringVar(&l.c.Level, "log-level", l.c.Level, `set the log level, e.g. "debug", "info", "warn", "error"`)
