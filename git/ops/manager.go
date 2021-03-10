@@ -13,7 +13,64 @@
 // limitations under the License.
 package ops
 
-type Manager interface {
-	AddManifest(repo, envName, appName string, manifest []byte)
-	DeleteManifest(repo, envName, appName, name string)
+import (
+	"context"
+	"io/ioutil"
+
+	"github.com/codefresh-io/pkg/git"
+)
+
+type (
+	Manager interface {
+		AddManifest(repo, envName, appName string, manifest []byte) error
+		DeleteManifest(repo, envName, appName, name string) error
+	}
+
+	manager struct {
+	}
+)
+
+func NewManager() Manager {
+	return &manager{}
+}
+
+func cloneRepository(cloneURL string) (git.Repository, error) {
+	clonePath, err := ioutil.TempDir("", "repo-")
+	if err != nil {
+		return nil, err
+	}
+
+	return git.Clone(context.TODO(), &git.CloneOptions{
+		URL:  cloneURL,
+		Path: clonePath,
+		Auth: nil, //get token from filesystem?
+	})
+}
+
+func (m *manager) AddManifest(repo, envName, appName string, manifest []byte) error {
+	r, err := cloneRepository(repo)
+	if err != nil {
+		return err
+	}
+
+	rootPath, err := r.Root()
+	if err != nil {
+		return err
+	}
+
+	c, err := LoadConfig(rootPath)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.GetEnvironment(envName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *manager) DeleteManifest(repo, envName, appName, name string) error {
+	return nil
 }
