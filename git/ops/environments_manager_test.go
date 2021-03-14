@@ -217,7 +217,7 @@ func TestApplication_childApps(t *testing.T) {
 		"Simple": {
 			&environment{
 				c: &config{
-					path: must(filepath.Abs("../../test/e2e/structures/uc1")),
+					path: must(filepath.Abs("../test/e2e/structures/uc1")),
 				},
 				RootApplicationPath: "root.yaml",
 			},
@@ -228,7 +228,7 @@ func TestApplication_childApps(t *testing.T) {
 							Name: "leaf",
 						},
 					},
-					must(filepath.Abs("../../test/e2e/structures/uc1/apps/app1.yaml")),
+					must(filepath.Abs("../test/e2e/structures/uc1/apps/app1.yaml")),
 					nil,
 				},
 			},
@@ -237,7 +237,7 @@ func TestApplication_childApps(t *testing.T) {
 		"Two levels": {
 			&environment{
 				c: &config{
-					path: must(filepath.Abs("../../test/e2e/structures/uc2")),
+					path: must(filepath.Abs("../test/e2e/structures/uc2")),
 				},
 				RootApplicationPath: "root.yaml",
 			},
@@ -248,7 +248,7 @@ func TestApplication_childApps(t *testing.T) {
 							Name: "child1",
 						},
 					},
-					must(filepath.Abs("../../test/e2e/structures/uc2/apps/app1.yaml")),
+					must(filepath.Abs("../test/e2e/structures/uc2/apps/app1.yaml")),
 					nil,
 				},
 				{
@@ -257,7 +257,7 @@ func TestApplication_childApps(t *testing.T) {
 							Name: "leaf2",
 						},
 					},
-					must(filepath.Abs("../../test/e2e/structures/uc2/apps/app2.yaml")),
+					must(filepath.Abs("../test/e2e/structures/uc2/apps/app2.yaml")),
 					nil,
 				},
 			},
@@ -304,7 +304,7 @@ func TestApplication_leafApps(t *testing.T) {
 		"Simple": {
 			&environment{
 				c: &config{
-					path: must(filepath.Abs("../../test/e2e/structures/uc1")),
+					path: must(filepath.Abs("../test/e2e/structures/uc1")),
 				},
 				RootApplicationPath: "root.yaml",
 			},
@@ -315,7 +315,7 @@ func TestApplication_leafApps(t *testing.T) {
 							Name: "leaf",
 						},
 					},
-					must(filepath.Abs("../../test/e2e/structures/uc1/apps/app1.yaml")),
+					must(filepath.Abs("../test/e2e/structures/uc1/apps/app1.yaml")),
 					nil,
 				},
 			},
@@ -324,7 +324,7 @@ func TestApplication_leafApps(t *testing.T) {
 		"Two levels": {
 			&environment{
 				c: &config{
-					path: must(filepath.Abs("../../test/e2e/structures/uc2")),
+					path: must(filepath.Abs("../test/e2e/structures/uc2")),
 				},
 				RootApplicationPath: "root.yaml",
 			},
@@ -335,7 +335,7 @@ func TestApplication_leafApps(t *testing.T) {
 							Name: "leaf1",
 						},
 					},
-					must(filepath.Abs("../../test/e2e/structures/uc2/apps/third/app3.yaml")),
+					must(filepath.Abs("../test/e2e/structures/uc2/apps/third/app3.yaml")),
 					nil,
 				},
 				{
@@ -344,7 +344,7 @@ func TestApplication_leafApps(t *testing.T) {
 							Name: "leaf2",
 						},
 					},
-					must(filepath.Abs("../../test/e2e/structures/uc2/apps/app2.yaml")),
+					must(filepath.Abs("../test/e2e/structures/uc2/apps/app2.yaml")),
 					nil,
 				},
 			},
