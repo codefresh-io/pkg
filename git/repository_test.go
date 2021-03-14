@@ -15,6 +15,7 @@ package git
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	billy "github.com/go-git/go-billy/v5"
@@ -28,30 +29,29 @@ import (
 func Test_Clone(t *testing.T) {
 	tests := map[string]struct {
 		opts             *CloneOptions
+		mockError        error
 		expectedURL      string
 		expectedPassword string
 		expectedRefName  plumbing.ReferenceName
+		expectedErr      string
 	}{
 		"Simple": {
 			opts: &CloneOptions{
-				URL:  "https://github.com/foo/bar",
-				Auth: nil,
+				URL: "https://github.com/foo/bar",
 			},
 			expectedURL:     "https://github.com/foo/bar",
 			expectedRefName: plumbing.HEAD,
 		},
 		"With tag": {
 			opts: &CloneOptions{
-				URL:  "https://github.com/foo/bar@tag",
-				Auth: nil,
+				URL: "https://github.com/foo/bar@tag",
 			},
 			expectedURL:     "https://github.com/foo/bar",
 			expectedRefName: plumbing.NewTagReferenceName("tag"),
 		},
 		"With branch": {
 			opts: &CloneOptions{
-				URL:  "https://github.com/foo/bar#branch",
-				Auth: nil,
+				URL: "https://github.com/foo/bar#branch",
 			},
 			expectedURL:     "https://github.com/foo/bar",
 			expectedRefName: plumbing.NewBranchReferenceName("branch"),
@@ -66,6 +66,24 @@ func Test_Clone(t *testing.T) {
 			expectedURL:      "https://github.com/foo/bar",
 			expectedPassword: "password",
 			expectedRefName:  plumbing.HEAD,
+		},
+		"Empty URL": {
+			opts: &CloneOptions{
+				URL: "",
+			},
+			expectedErr: "URL field is required",
+		},
+		"No Options": {
+			expectedErr: "options cannot be nil",
+		},
+		"Clone error": {
+			opts: &CloneOptions{
+				URL: "https://github.com/foo/bar",
+			},
+			mockError:   errors.New("some error"),
+			expectedURL:     "https://github.com/foo/bar",
+			expectedRefName: plumbing.HEAD,
+			expectedErr: "some error",
 		},
 	}
 
@@ -86,11 +104,14 @@ func Test_Clone(t *testing.T) {
 				assert.Equal(t, test.expectedPassword, bauth.Password)
 			}
 
-			return nil, nil
+			return nil, test.mockError
 		}
 
 		t.Run(name, func(t *testing.T) {
-			_, _ = Clone(context.Background(), test.opts)
+			_, err := Clone(context.Background(), test.opts)
+			if test.expectedErr != "" {
+				assert.EqualError(t, err, test.expectedErr)
+			}
 		})
 	}
 }
