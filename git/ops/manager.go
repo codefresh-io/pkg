@@ -15,7 +15,6 @@ package ops
 
 import (
 	"context"
-	"io/ioutil"
 
 	"github.com/codefresh-io/pkg/git"
 )
@@ -38,14 +37,8 @@ func NewManager() Manager {
 }
 
 func cloneRepository(cloneURL string) (git.Repository, error) {
-	clonePath, err := ioutil.TempDir("", "repo-")
-	if err != nil {
-		return nil, err
-	}
-
 	return git.Clone(context.TODO(), &git.CloneOptions{
 		URL:  cloneURL,
-		Path: clonePath,
 		Auth: nil, //get token from filesystem?
 	})
 }

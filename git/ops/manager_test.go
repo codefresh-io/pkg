@@ -18,11 +18,11 @@ import (
 )
 
 func Test_manager_AddManifest(t *testing.T) {
-	type args struct {
-		envName  string
-		appName  string
-		manifest []byte
-	}
+	// type args struct {
+	// 	envName  string
+	// 	appName  string
+	// 	manifest []byte
+	// }
 
 	// tests := map[string]struct {
 	// 	args    args

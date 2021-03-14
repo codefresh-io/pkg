@@ -20,9 +20,7 @@ import (
 	"os"
 	"strings"
 
-	billy "github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/memfs"
-	"github.com/go-git/go-git/storage"
 	gg "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -78,10 +76,7 @@ var (
 
 // go-git functions (we mock those in tests)
 var (
-	clone2 = func(ctx context.Context, s storage.Storer, worktree billy.Filesystem, o *gg.CloneOptions) (*gg.Repository, error) {
-		return nil, nil
-	}
-	clone    = gg.Clone
+	clone    = gg.CloneContext
 	initRepo = gg.Init
 )
 
@@ -93,10 +88,12 @@ func Clone(ctx context.Context, opts *CloneOptions) (Repository, error) {
 	auth := getAuth(opts.Auth)
 
 	cloneOpts := &gg.CloneOptions{
-		Depth:    1,
-		URL:      opts.URL,
-		Auth:     auth,
-		Progress: os.Stderr,
+		URL:          opts.URL,
+		Auth:         auth,
+		SingleBranch: true,
+		Depth:        1,
+		Progress:     os.Stderr,
+		Tags:         gg.NoTags,
 	}
 
 	if ref := getRef(opts.URL); ref != "" {
@@ -112,7 +109,7 @@ func Clone(ctx context.Context, opts *CloneOptions) (Repository, error) {
 		return nil, err
 	}
 
-	r, err := gg.CloneContext(ctx, memory.NewStorage(), memfs.New(), cloneOpts)
+	r, err := clone(ctx, memory.NewStorage(), memfs.New(), cloneOpts)
 	if err != nil {
 		return nil, err
 	}

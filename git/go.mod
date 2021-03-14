@@ -8,7 +8,6 @@ require (
 	github.com/codefresh-io/pkg/helpers v0.0.3
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-billy/v5 v5.0.0
-	github.com/go-git/go-git v4.7.0+incompatible
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/google/go-github/v32 v32.1.0
 	github.com/stretchr/testify v1.7.0
