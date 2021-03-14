@@ -13,28 +13,31 @@
 // limitations under the License.
 package ops
 
-import "testing"
+import (
+	"testing"
+)
 
 func Test_manager_AddManifest(t *testing.T) {
 	type args struct {
-		repo     string
 		envName  string
 		appName  string
 		manifest []byte
 	}
 
-	tests := map[string]struct {
-		m       *manager
-		args    args
-		wantErr bool
-	}{}
+	// tests := map[string]struct {
+	// 	args    args
+	// 	wantErr bool
+	// }{}
 
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			m := &manager{}
-			if err := m.AddManifest(tt.args.repo, tt.args.envName, tt.args.appName, tt.args.manifest); (err != nil) != tt.wantErr {
-				t.Errorf("manager.AddManifest() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	// mockRepo := new(mocks.Repository)
+	// mockRepo.On("Root").Return("/some/root/folder")
+
+	// for name, tt := range tests {
+	// 	t.Run(name, func(t *testing.T) {
+	// 		m := &manager{}
+	// 		if err := m.AddManifest(nil, tt.args.envName, tt.args.appName, tt.args.manifest); (err != nil) != tt.wantErr {
+	// 			t.Errorf("manager.AddManifest() error = %v, wantErr %v", err, tt.wantErr)
+	// 		}
+	// 	})
+	// }
 }

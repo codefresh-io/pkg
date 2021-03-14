@@ -36,20 +36,6 @@ type (
 		Host string
 	}
 
-	// Auth for git provider
-	Auth struct {
-		Username string
-		Password string
-	}
-
-	CloneOptions struct {
-		// URL clone url
-		URL string
-		// Path where to clone to
-		Path string
-		Auth *Auth
-	}
-
 	CreateRepoOptions struct {
 		Owner   string
 		Name    string

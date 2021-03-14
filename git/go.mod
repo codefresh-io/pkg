@@ -7,9 +7,13 @@ require (
 	github.com/codefresh-io/cf-argo v0.0.4
 	github.com/codefresh-io/pkg/helpers v0.0.3
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-git/go-billy/v5 v5.0.0
+	github.com/go-git/go-git v4.7.0+incompatible
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/google/go-github/v32 v32.1.0
 	github.com/stretchr/testify v1.7.0
+	golang.org/x/sys v0.0.0-20210309074719-68d13333faf2 // indirect
+	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	k8s.io/api v0.19.2
 	k8s.io/apimachinery v0.19.2
 	sigs.k8s.io/kustomize/api v0.7.2

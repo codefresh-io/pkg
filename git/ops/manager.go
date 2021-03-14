@@ -23,11 +23,14 @@ import (
 type (
 	Manager interface {
 		AddManifest(repo, envName, appName string, manifest []byte) error
-		DeleteManifest(repo, envName, appName, name string) error
 	}
 
 	manager struct {
 	}
+)
+
+var (
+	clone = cloneRepository
 )
 
 func NewManager() Manager {
@@ -48,7 +51,7 @@ func cloneRepository(cloneURL string) (git.Repository, error) {
 }
 
 func (m *manager) AddManifest(repo, envName, appName string, manifest []byte) error {
-	r, err := cloneRepository(repo)
+	r, err := clone(repo)
 	if err != nil {
 		return err
 	}
@@ -63,14 +66,10 @@ func (m *manager) AddManifest(repo, envName, appName string, manifest []byte) er
 		return err
 	}
 
-	_, err = c.GetEnvironment(envName)
+	err = c.AddManifest(envName, appName, manifest)
 	if err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func (m *manager) DeleteManifest(repo, envName, appName, name string) error {
 	return nil
 }

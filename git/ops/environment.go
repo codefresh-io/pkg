@@ -41,6 +41,7 @@ type (
 	Environment interface {
 		Name() string
 		Uninstall() (bool, error)
+		AddManifest(appName string, manifest []byte) error
 	}
 
 	environment struct {
@@ -69,6 +70,15 @@ func (e *environment) Uninstall() (bool, error) {
 	}
 
 	return false, err
+}
+
+func (e *environment) AddManifest(appName string, manifest []byte) error {
+	app, err := e.getApp(appName)
+	if err != nil {
+		return err
+	}
+
+	return app.AddManifest(manifest)
 }
 
 func (e *environment) getRootApp() (*application, error) {

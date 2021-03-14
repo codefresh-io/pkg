@@ -49,6 +49,7 @@ type (
 		GetEnvironment(name string) (Environment, error)
 		AddEnvironmentP(ctx context.Context, env Environment, values interface{}, dryRun bool) error
 		DeleteEnvironmentP(ctx context.Context, name string, values interface{}, dryRun bool) error
+		AddManifest(envName, appName string, manifest []byte) error
 	}
 
 	config struct {
@@ -183,6 +184,15 @@ func (c *config) DeleteEnvironmentP(ctx context.Context, name string, values int
 		Manifests: manifests,
 		DryRun:    dryRun,
 	})
+}
+
+func (c *config) AddManifest(envName, appName string, manifest []byte) error {
+	env, err := c.GetEnvironment(envName)
+	if err != nil {
+		return err
+	}
+
+	return env.AddManifest(appName, manifest)
 }
 
 func (c *config) firstEnv() *environment {

@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package git
 
 import (
@@ -21,11 +20,15 @@ import (
 	"os"
 	"strings"
 
+	billy "github.com/go-git/go-billy/v5"
+	"github.com/go-git/go-billy/v5/memfs"
+	"github.com/go-git/go-git/storage"
 	gg "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/storage/memory"
 )
 
 type (
@@ -43,6 +46,18 @@ type (
 		IsNewRepo() (bool, error)
 
 		Root() (string, error)
+	}
+
+	CloneOptions struct {
+		// URL clone url
+		URL  string
+		Auth *Auth
+	}
+
+	// Auth for git provider
+	Auth struct {
+		Username string
+		Password string
 	}
 
 	PushOptions struct {
@@ -63,8 +78,11 @@ var (
 
 // go-git functions (we mock those in tests)
 var (
-	plainClone = gg.PlainCloneContext
-	plainInit  = gg.PlainInit
+	clone2 = func(ctx context.Context, s storage.Storer, worktree billy.Filesystem, o *gg.CloneOptions) (*gg.Repository, error) {
+		return nil, nil
+	}
+	clone    = gg.Clone
+	initRepo = gg.Init
 )
 
 func Clone(ctx context.Context, opts *CloneOptions) (Repository, error) {
@@ -94,7 +112,7 @@ func Clone(ctx context.Context, opts *CloneOptions) (Repository, error) {
 		return nil, err
 	}
 
-	r, err := plainClone(ctx, opts.Path, false, cloneOpts)
+	r, err := gg.CloneContext(ctx, memory.NewStorage(), memfs.New(), cloneOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -102,12 +120,8 @@ func Clone(ctx context.Context, opts *CloneOptions) (Repository, error) {
 	return &repo{r}, nil
 }
 
-func Init(ctx context.Context, path string) (Repository, error) {
-	if path == "" {
-		path = "."
-	}
-
-	r, err := plainInit(path, false)
+func Init(ctx context.Context) (Repository, error) {
+	r, err := initRepo(memory.NewStorage(), memfs.New())
 	if err != nil {
 		return nil, err
 	}
