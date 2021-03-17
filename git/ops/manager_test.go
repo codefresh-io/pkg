@@ -31,17 +31,17 @@ func Test_Manager_AddManifest(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{
-			name: "asd",
-			m:    NewManager(),
-			args: args{
-				cloneURL: "https://github.com/noam-codefresh/demo",
-				envName:  "prod",
-				appName:  "argo-workflows",
-				manifest: []byte{},
-			},
-			wantErr: false,
-		},
+		// {
+		// 	name: "asd",
+		// 	m:    NewManager(),
+		// 	args: args{
+		// 		cloneURL: "https://github.com/noam-codefresh/demo",
+		// 		envName:  "prod",
+		// 		appName:  "argo-workflows",
+		// 		manifest: []byte{},
+		// 	},
+		// 	wantErr: false,
+		// },
 	}
 
 	for _, tt := range tests {
