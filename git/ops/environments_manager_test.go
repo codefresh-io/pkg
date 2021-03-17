@@ -14,53 +14,14 @@
 package ops
 
 import (
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
+	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-func TestEnvironment_bootstrapUrl(t *testing.T) {
-	tests := map[string]struct {
-		env  *environment
-		want string
-	}{
-		"Simple": {
-			&environment{
-				TemplateRef: "https://github.com/foo/bar",
-			},
-			"https://github.com/foo/bar/" + bootstrapDir,
-		},
-		"With Tag": {
-			&environment{
-				TemplateRef: "https://github.com/foo/bar@v0.0.1",
-			},
-			"https://github.com/foo/bar/" + bootstrapDir + "?ref=v0.0.1",
-		},
-		"With Branch Name": {
-			&environment{
-				TemplateRef: "https://github.com/foo/bar#fizz",
-			},
-			"https://github.com/foo/bar/" + bootstrapDir + "?ref=fizz",
-		},
-		"With Branch SHA": {
-			&environment{
-				TemplateRef: "https://github.com/foo/bar#f24fcad",
-			},
-			"https://github.com/foo/bar/" + bootstrapDir + "?ref=f24fcad",
-		},
-	}
-	for tname, tt := range tests {
-		t.Run(tname, func(t *testing.T) {
-			got := tt.env.bootstrapUrl()
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
 
 func Test_getAppFromFile(t *testing.T) {
 	basicApp := &application{
@@ -106,7 +67,6 @@ spec:
 			want: basicApp,
 			err:  "",
 		},
-
 		"Should return only first app": {
 			data: []byte(`
 apiVersion: argoproj.io/v1alpha1
@@ -178,16 +138,16 @@ spec:
 	}
 	for tname, tt := range tests {
 		t.Run(tname, func(t *testing.T) {
-			tf, err := ioutil.TempFile("", "")
+			fs := memfs.New()
+			tf, err := fs.TempFile("", "")
 			assert.NoError(t, err)
 			defer func() { _ = os.Remove(tf.Name()) }()
 
 			_, err = tf.Write(tt.data)
 			assert.NoError(t, err)
 			env := &environment{
-				c: &config{
-					path: filepath.Dir(tf.Name()),
-				},
+				fs,
+				"/",
 			}
 			got, err := env.getAppFromFile(tf.Name())
 			if tt.err != "" {
@@ -199,180 +159,6 @@ spec:
 			assert.Equal(t, tt.want.Name, got.Name)
 			assert.Equal(t, tt.want.Spec.Source.Path, got.SrcPath())
 			assert.Equal(t, tt.want.Spec.Source.RepoURL, got.Spec.Source.RepoURL)
-		})
-	}
-}
-
-func TestApplication_childApps(t *testing.T) {
-	must := func(path string, err error) string {
-		assert.NoError(t, err)
-		return path
-	}
-
-	tests := map[string]struct {
-		env  *environment
-		want []*application
-		err  string
-	}{
-		"Simple": {
-			&environment{
-				c: &config{
-					path: must(filepath.Abs("../test/e2e/structures/uc1")),
-				},
-				RootApplicationPath: "root.yaml",
-			},
-			[]*application{
-				{
-					&v1alpha1.Application{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "leaf",
-						},
-					},
-					must(filepath.Abs("../test/e2e/structures/uc1/apps/app1.yaml")),
-					nil,
-				},
-			},
-			"",
-		},
-		"Two levels": {
-			&environment{
-				c: &config{
-					path: must(filepath.Abs("../test/e2e/structures/uc2")),
-				},
-				RootApplicationPath: "root.yaml",
-			},
-			[]*application{
-				{
-					&v1alpha1.Application{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "child1",
-						},
-					},
-					must(filepath.Abs("../test/e2e/structures/uc2/apps/app1.yaml")),
-					nil,
-				},
-				{
-					&v1alpha1.Application{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "leaf2",
-						},
-					},
-					must(filepath.Abs("../test/e2e/structures/uc2/apps/app2.yaml")),
-					nil,
-				},
-			},
-			"",
-		},
-	}
-
-	for tname, tt := range tests {
-		t.Run(tname, func(t *testing.T) {
-			app, err := tt.env.getRootApp()
-			if tt.err != "" {
-				assert.Contains(t, err.Error(), tt.err)
-				return
-			}
-			assert.NoError(t, err)
-
-			got, err := app.childApps()
-			if tt.err != "" {
-				assert.Contains(t, err.Error(), tt.err)
-				return
-			}
-
-			assert.NoError(t, err)
-			assert.Equal(t, len(tt.want), len(got))
-			for i, ca := range got {
-				assert.Equal(t, tt.want[i].Path, ca.Path)
-				assert.Equal(t, tt.want[i].Name, ca.Name)
-			}
-		})
-	}
-}
-
-func TestApplication_leafApps(t *testing.T) {
-	must := func(path string, err error) string {
-		assert.NoError(t, err)
-		return path
-	}
-
-	tests := map[string]struct {
-		env  *environment
-		want []*application
-		err  string
-	}{
-		"Simple": {
-			&environment{
-				c: &config{
-					path: must(filepath.Abs("../test/e2e/structures/uc1")),
-				},
-				RootApplicationPath: "root.yaml",
-			},
-			[]*application{
-				{
-					&v1alpha1.Application{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "leaf",
-						},
-					},
-					must(filepath.Abs("../test/e2e/structures/uc1/apps/app1.yaml")),
-					nil,
-				},
-			},
-			"",
-		},
-		"Two levels": {
-			&environment{
-				c: &config{
-					path: must(filepath.Abs("../test/e2e/structures/uc2")),
-				},
-				RootApplicationPath: "root.yaml",
-			},
-			[]*application{
-				{
-					&v1alpha1.Application{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "leaf1",
-						},
-					},
-					must(filepath.Abs("../test/e2e/structures/uc2/apps/third/app3.yaml")),
-					nil,
-				},
-				{
-					&v1alpha1.Application{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "leaf2",
-						},
-					},
-					must(filepath.Abs("../test/e2e/structures/uc2/apps/app2.yaml")),
-					nil,
-				},
-			},
-			"",
-		},
-	}
-
-	for tname, tt := range tests {
-		t.Run(tname, func(t *testing.T) {
-			app, err := tt.env.getRootApp()
-			if tt.err != "" {
-				assert.Contains(t, err.Error(), tt.err)
-				return
-			}
-			assert.NoError(t, err)
-
-			got, err := app.LeafApps()
-			if tt.err != "" {
-				assert.Contains(t, err.Error(), tt.err)
-				return
-			}
-
-			assert.NoError(t, err)
-			assert.Equal(t, len(tt.want), len(got))
-			// for i, ca := range got {
-			// 	assert.Equal(t, tt.want[i].Path, ca.Path)
-			// 	assert.Equal(t, tt.want[i].Name, ca.Name)
-			// }
 		})
 	}
 }

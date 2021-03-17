@@ -15,13 +15,13 @@ package ops
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	"github.com/codefresh-io/cf-argo/pkg/store"
 	"github.com/ghodss/yaml"
+	"github.com/go-git/go-billy/v5"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kustomize "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -37,7 +37,7 @@ type (
 		LeafApps() ([]Application, error)
 		SrcPath() string
 		Uninstall() (bool, error)
-		AddManifest(manifest []byte) error
+		AddManifest(manifest []byte) (string, error)
 	}
 
 	application struct {
@@ -47,11 +47,6 @@ type (
 		// env the environment that contains this application
 		env *environment
 	}
-)
-
-var (
-	readFile = ioutil.ReadFile
-	writeFile = ioutil.WriteFile
 )
 
 func (a *application) IsManaged() bool {
@@ -124,34 +119,49 @@ func (a *application) Uninstall() (bool, error) {
 	return len(childApps) == totalUninstalled, nil
 }
 
-func (a *application) AddManifest(manifest []byte) error {
-	fileName := "newManifest.yaml"
-	fullSrcPath := filepath.Join(a.env.c.path, a.SrcPath())
-	fullFilePath := filepath.Join(fullSrcPath, fileName)
-
-	err := writeFile(fullFilePath, manifest, 0644)
+func (a *application) AddManifest(data []byte) (string, error) {
+	fileName, err := getFileName(data)
 	if err != nil {
-		return err
+		return "", err
+	}
+
+	fullSrcPath := a.env.fs.Join(a.env.rootPath, a.SrcPath())
+	fullFilePath := a.env.fs.Join(fullSrcPath, fileName)
+
+	err = writeFile(a.env.fs, fullFilePath, data)
+	if err != nil {
+		return "", err
 	}
 
 	k, err := a.readKustomization()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	k.Resources = append(k.Resources, fileName)
 
-	return a.writeKustomization(k)
+	return fileName, a.writeKustomization(k)
+}
+
+func getFileName(data []byte) (string, error) {
+	u := &unstructured.Unstructured{}
+
+	err := yaml.Unmarshal(data, u)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s.yaml", u.GetName()), nil
 }
 
 // func (a *application) deleteFromFilesystem() error {
-// 	srcDir := filepath.Join(a.env.c.path, a.SrcPath())
+// 	srcDir := a.env.fs.Join(a.env.c.path, a.SrcPath())
 // 	err := os.RemoveAll(srcDir)
 // 	if err != nil {
 // 		return err
 // 	}
 
-// 	projectPath := filepath.Join(filepath.Dir(a.Path), fmt.Sprintf("%s-project.yaml", a.Name))
+// 	projectPath := a.env.fs.Join(a.env.fs.Dir(a.Path), fmt.Sprintf("%s-project.yaml", a.Name))
 // 	err = os.Remove(projectPath)
 // 	if err != nil {
 // 		return err
@@ -165,9 +175,9 @@ func (a *application) AddManifest(manifest []byte) error {
 // 	return nil
 // }
 
-func (a *application) setSrcPath(newPath string) {
-	a.Spec.Source.Path = newPath
-}
+// func (a *application) setSrcPath(newPath string) {
+// 	a.Spec.Source.Path = newPath
+// }
 
 func (a *application) labelValue(label string) string {
 	if a.Labels == nil {
@@ -177,17 +187,17 @@ func (a *application) labelValue(label string) string {
 	return a.Labels[label]
 }
 
-func (a *application) getBaseLocation() (string, error) {
-	k, err := a.readKustomization()
-	if err != nil {
-		return "", err
-	}
+// func (a *application) getBaseLocation() (string, error) {
+// 	k, err := a.readKustomization()
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	return filepath.Clean(filepath.Join(a.SrcPath(), k.Resources[0])), nil
-}
+// 	return a.env.fs.Join(a.SrcPath(), k.Resources[0]), nil
+// }
 
 func (a *application) readKustomization() (*kustomize.Kustomization, error) {
-	bytes, err := readFile(a.KustomizationPath())
+	bytes, err := readFile(a.env.fs, a.KustomizationPath())
 	if err != nil {
 		return nil, err
 	}
@@ -198,19 +208,19 @@ func (a *application) readKustomization() (*kustomize.Kustomization, error) {
 }
 
 func (a *application) writeKustomization(k *kustomize.Kustomization) error {
-	return writeResource(k, a.KustomizationPath())
+	return writeResource(a.env.fs, k, a.KustomizationPath())
 }
 
 func (a *application) KustomizationPath() string {
-	return filepath.Join(a.env.c.path, a.SrcPath(), "kustomization.yaml")
+	return a.env.fs.Join(a.env.rootPath, a.SrcPath(), "kustomization.yaml")
 }
 
-func (a *application) save() error {
-	return writeResource(a, a.Path)
-}
+// func (a *application) save() error {
+// 	return writeResource(a.env.fs, a, a.Path)
+// }
 
 func (a *application) childApps() ([]*application, error) {
-	filenames, err := filepath.Glob(filepath.Join(a.env.c.path, a.SrcPath(), "*.yaml"))
+	filenames, err := getYamls(a.env.fs, a.SrcPath())
 	if err != nil {
 		return nil, err
 	}
@@ -232,11 +242,11 @@ func (a *application) childApps() ([]*application, error) {
 	return res, nil
 }
 
-func writeResource(r interface{}, path string) error {
+func writeResource(fs billy.Basic, r interface{}, path string) error {
 	data, err := yaml.Marshal(r)
 	if err != nil {
 		return err
 	}
 
-	return writeFile(path, data, 0644)
+	return writeFile(fs, path, data)
 }

@@ -80,10 +80,10 @@ func Test_Clone(t *testing.T) {
 			opts: &CloneOptions{
 				URL: "https://github.com/foo/bar",
 			},
-			mockError:   errors.New("some error"),
+			mockError:       errors.New("some error"),
 			expectedURL:     "https://github.com/foo/bar",
 			expectedRefName: plumbing.HEAD,
-			expectedErr: "some error",
+			expectedErr:     "some error",
 		},
 	}
 
@@ -108,9 +108,41 @@ func Test_Clone(t *testing.T) {
 		}
 
 		t.Run(name, func(t *testing.T) {
-			_, err := Clone(context.Background(), test.opts)
+			_, err := Clone(context.Background(), nil, test.opts)
 			if test.expectedErr != "" {
 				assert.EqualError(t, err, test.expectedErr)
+			}
+		})
+	}
+}
+
+func Test_repo_Add(t *testing.T) {
+	type fields struct {
+		r *gg.Repository
+	}
+
+	type args struct {
+		ctx     context.Context
+		pattern string
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &repo{
+				r: tt.fields.r,
+			}
+
+			if err := r.Add(tt.args.ctx, tt.args.pattern); (err != nil) != tt.wantErr {
+				t.Errorf("repo.Add() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

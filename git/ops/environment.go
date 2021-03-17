@@ -16,180 +16,80 @@ package ops
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
-	"github.com/codefresh-io/pkg/helpers"
 	"github.com/ghodss/yaml"
+	"github.com/go-git/go-billy/v5"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-// errors
 var (
+	ErrAppNotFound              = errors.New("app not found")
 	yamlSeparator = regexp.MustCompile(`\n---`)
-)
-
-const (
-	bootstrapDir = "bootstrap"
 )
 
 type (
 	Environment interface {
 		Name() string
-		Uninstall() (bool, error)
-		AddManifest(appName string, manifest []byte) error
+		AddManifest(appName string, manifest []byte) (string, error)
 	}
 
 	environment struct {
-		c                   *config
-		name                string
-		RootApplicationPath string `json:"rootAppPath"`
-		TemplateRef         string `json:"templateRef"`
+		fs billy.Filesystem
+		rootPath string
 	}
 )
 
+func NewEnvironment(fs billy.Filesystem, rootPath string) Environment {
+	return &environment{fs, rootPath}
+}
+
 func (e *environment) Name() string {
-	return e.name
+	return filepath.Dir(e.rootPath)
 }
 
-// Uninstall removes all managed apps and returns true if there are no more
-// apps left in the environment.
-func (e *environment) Uninstall() (bool, error) {
-	rootApp, err := e.getRootApp()
-	if err != nil {
-		return false, err
-	}
-
-	uninstalled, err := rootApp.Uninstall()
-	if uninstalled {
-		return true, createDummy(filepath.Join(e.c.path, rootApp.SrcPath()))
-	}
-
-	return false, err
-}
-
-func (e *environment) AddManifest(appName string, manifest []byte) error {
+func (e *environment) AddManifest(appName string, manifest []byte) (string, error) {
 	app, err := e.getApp(appName)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	return app.AddManifest(manifest)
 }
 
-func (e *environment) getRootApp() (*application, error) {
-	return e.getAppFromFile(filepath.Join(e.c.path, e.RootApplicationPath))
-}
-
 func (e *environment) getApp(appName string) (*application, error) {
-	rootApp, err := e.getRootApp()
+	yamls, err := getYamls(e.fs, e.rootPath)
 	if err != nil {
 		return nil, err
 	}
 
-	app, err := e.getAppRecurse(rootApp, appName)
-	if err != nil {
-		return nil, err
-	}
+	for _, yaml := range(yamls) {
+		app, _ := e.getAppFromFile(yaml)
 
-	if app == nil {
-		return nil, fmt.Errorf("%w: %s", ErrAppNotFound, appName)
-	}
-
-	return app, nil
-}
-
-func (e *environment) leafApps() ([]Application, error) {
-	rootApp, err := e.getRootApp()
-	if err != nil {
-		return nil, err
-	}
-
-	return rootApp.LeafApps()
-}
-
-func (e *environment) bootstrapUrl() string {
-	var parts []string
-
-	switch {
-	case strings.Contains(e.TemplateRef, "#"):
-		parts = strings.Split(e.TemplateRef, "#")
-	case strings.Contains(e.TemplateRef, "@"):
-		parts = strings.Split(e.TemplateRef, "@")
-	default:
-		parts = []string{e.TemplateRef}
-	}
-
-	bootstrapUrl := fmt.Sprintf("%s/%s", parts[0], bootstrapDir)
-
-	if len(parts) > 1 {
-		return fmt.Sprintf("%s?ref=%s", bootstrapUrl, parts[1])
-	}
-
-	return bootstrapUrl
-}
-
-func (e *environment) cleanup() error {
-	_, err := e.getRootApp()
-	if err != nil {
-		return err
-	}
-
-	return nil // rootApp.deleteFromFilesystem()
-}
-
-func (e *environment) installApp(srcRootPath string, app *application) error {
-	appName := app.LabelName()
-
-	refApp, err := e.c.getApp(appName)
-	if err != nil {
-		if !errors.Is(err, ErrAppNotFound) {
-			return err
+		res, _ := e.getAppRecurse(app, appName)
+		if res != nil {
+			return res, nil
 		}
-
-		return e.installNewApp(srcRootPath, app)
 	}
 
-	baseLocation, err := refApp.getBaseLocation()
-	if err != nil {
-		return err
-	}
-
-	absSrc := filepath.Join(srcRootPath, app.SrcPath())
-
-	dst := filepath.Clean(filepath.Join(baseLocation, "..", "overlays", e.name))
-	absDst := filepath.Join(e.c.path, dst)
-
-	err = helpers.CopyDir(absSrc, absDst)
-	if err != nil {
-		return err
-	}
-
-	app.setSrcPath(dst)
-
-	return app.save()
-}
-
-func (e *environment) installNewApp(srcRootPath string, app Application) error {
-	appFolder := filepath.Clean(filepath.Join(app.SrcPath(), "..", ".."))
-	absSrc := filepath.Join(srcRootPath, appFolder)
-	absDst := filepath.Join(e.c.path, appFolder)
-
-	return helpers.CopyDir(absSrc, absDst)
+	return nil, ErrAppNotFound
 }
 
 func (e *environment) getAppRecurse(root *application, appName string) (*application, error) {
+	if root == nil || root.IsManaged() {
+		return nil, nil
+	}
+
 	if root.LabelName() == appName {
 		return root, nil
 	}
 
 	appsDir := root.SrcPath() // check if it's not in this repo
 
-	filenames, err := filepath.Glob(filepath.Join(e.c.path, appsDir, "*.yaml"))
+	filenames, err := getYamls(e.fs, appsDir)
 	if err != nil {
 		return nil, err
 	}
@@ -198,10 +98,6 @@ func (e *environment) getAppRecurse(root *application, appName string) (*applica
 		app, err := e.getAppFromFile(f)
 		if err != nil || app == nil {
 			// not an argocd app - ignore
-			continue
-		}
-
-		if !app.IsManaged() {
 			continue
 		}
 
@@ -215,7 +111,7 @@ func (e *environment) getAppRecurse(root *application, appName string) (*applica
 }
 
 func (e *environment) getAppFromFile(path string) (*application, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := readFile(e.fs, path)
 	if err != nil {
 		return nil, err
 	}
@@ -245,11 +141,11 @@ func (e *environment) getAppFromFile(path string) (*application, error) {
 	return nil, nil
 }
 
-func createDummy(path string) error {
-	file, err := os.Create(filepath.Join(path, "DUMMY"))
-	if err != nil {
-		return err
-	}
+// func createDummy(fs billy.Basic, path string) error {
+// 	file, err := fs.Create(fs.Join(path, "DUMMY"))
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return file.Close()
-}
+// 	return file.Close()
+// }

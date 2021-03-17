@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package git
 
 import (
@@ -20,7 +21,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/go-git/go-billy/v5/memfs"
+	"github.com/go-git/go-billy/v5"
 	gg "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -59,8 +60,7 @@ type (
 	}
 
 	PushOptions struct {
-		RemoteName string
-		Auth       *Auth
+		Auth *Auth
 	}
 
 	repo struct {
@@ -80,7 +80,7 @@ var (
 	initRepo = gg.Init
 )
 
-func Clone(ctx context.Context, opts *CloneOptions) (Repository, error) {
+func Clone(ctx context.Context, fs billy.Filesystem, opts *CloneOptions) (Repository, error) {
 	if opts == nil {
 		return nil, ErrNilOpts
 	}
@@ -109,7 +109,7 @@ func Clone(ctx context.Context, opts *CloneOptions) (Repository, error) {
 		return nil, err
 	}
 
-	r, err := clone(ctx, memory.NewStorage(), memfs.New(), cloneOpts)
+	r, err := clone(ctx, memory.NewStorage(), fs, cloneOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +117,8 @@ func Clone(ctx context.Context, opts *CloneOptions) (Repository, error) {
 	return &repo{r}, nil
 }
 
-func Init(ctx context.Context) (Repository, error) {
-	r, err := initRepo(memory.NewStorage(), memfs.New())
+func Init(fs billy.Filesystem) (Repository, error) {
+	r, err := initRepo(memory.NewStorage(), fs)
 	if err != nil {
 		return nil, err
 	}
@@ -177,9 +177,8 @@ func (r *repo) Push(ctx context.Context, opts *PushOptions) error {
 
 	auth := getAuth(opts.Auth)
 	pushOpts := &gg.PushOptions{
-		RemoteName: opts.RemoteName,
-		Auth:       auth,
-		Progress:   os.Stdout,
+		Auth:     auth,
+		Progress: os.Stdout,
 	}
 
 	err := pushOpts.Validate()

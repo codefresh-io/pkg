@@ -17,27 +17,38 @@ import (
 	"testing"
 )
 
-func Test_manager_AddManifest(t *testing.T) {
-	// type args struct {
-	// 	envName  string
-	// 	appName  string
-	// 	manifest []byte
-	// }
+func Test_Manager_AddManifest(t *testing.T) {
+	type args struct {
+		cloneURL string
+		envName  string
+		appName  string
+		manifest []byte
+	}
 
-	// tests := map[string]struct {
-	// 	args    args
-	// 	wantErr bool
-	// }{}
+	tests := []struct {
+		name    string
+		m       Manager
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "asd",
+			m:    NewManager(),
+			args: args{
+				cloneURL: "https://github.com/noam-codefresh/demo",
+				envName:  "prod",
+				appName:  "argo-workflows",
+				manifest: []byte{},
+			},
+			wantErr: false,
+		},
+	}
 
-	// mockRepo := new(mocks.Repository)
-	// mockRepo.On("Root").Return("/some/root/folder")
-
-	// for name, tt := range tests {
-	// 	t.Run(name, func(t *testing.T) {
-	// 		m := &manager{}
-	// 		if err := m.AddManifest(nil, tt.args.envName, tt.args.appName, tt.args.manifest); (err != nil) != tt.wantErr {
-	// 			t.Errorf("manager.AddManifest() error = %v, wantErr %v", err, tt.wantErr)
-	// 		}
-	// 	})
-	// }
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.m.AddManifest(tt.args.cloneURL, tt.args.envName, tt.args.appName, tt.args.manifest); (err != nil) != tt.wantErr {
+				t.Errorf("manager.AddManifest() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }
