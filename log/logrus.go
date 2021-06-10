@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package log
 
 import (
@@ -63,9 +64,11 @@ func GetLogrusEntry(l Logger) (*logrus.Entry, error) {
 func (l *logrusAdapter) AddPFlags(cmd *cobra.Command) {
 	flags := pflag.NewFlagSet("logrus", pflag.ContinueOnError)
 	flags.StringVar(&l.c.Level, "log-level", l.c.Level, `set the log level, e.g. "debug", "info", "warn", "error"`)
-	format := flags.String("log-format", defaultFormatter, `set the log format: "text", "json" (defaults to text)`)
+	format := flags.String("log-format", defaultFormatter, `set the log format: "text", "json"`)
 
 	cmd.PersistentFlags().AddFlagSet(flags)
+	orgPreRun := cmd.PersistentPreRunE
+
 	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		switch *format {
 		case string(FormatterJSON), string(FormatterText):
@@ -74,7 +77,15 @@ func (l *logrusAdapter) AddPFlags(cmd *cobra.Command) {
 			return fmt.Errorf("invalid log format: %s", *format)
 		}
 
-		return l.configure(flags)
+		if err := l.configure(flags); err != nil {
+			return err
+		}
+
+		if orgPreRun != nil {
+			return orgPreRun(cmd, args)
+		}
+
+		return nil
 	}
 }
 

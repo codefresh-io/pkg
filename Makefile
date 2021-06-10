@@ -1,8 +1,5 @@
 VER?=0.0.1
 YEAR?=$(shell date +"%Y")
-MODULES=$(shell find . -mindepth 2 -maxdepth 4 -type f -name 'go.mod' | cut -c 3- | sed 's|/[^/]*$$||' | sort -u | tr / :)
-targets=$(addprefix pkg-, $(MODULES))
-root_dir=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -10,27 +7,32 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-all: $(targets) coverage.txt
+.PHONY: cur-version
+cur-version:
+	@echo -n $(VERSION)
 
-tidy-%:
-	cd $(subst :,/,$*); go mod tidy
+.PHONY: lint
+lint: $(GOBIN)/golangci-lint
+	@golangci-lint run --fix --timeout 6m
 
-lint-%: $(GOBIN)/golangci-lint
-	cd $(subst :,/,$*); golangci-lint run --fix --timeout 3m
+.PHONY: codegen
+codegen: $(GOBIN)/mockery
+	go generate ./...
+	go run ./hack/license.go --license ./hack/boilerplate.txt --year $(YEAR) .
 
-vet-%:
-	cd $(subst :,/,$*); go vet ./...
+.PHONY: test
+test:
+	@./hack/test.sh
 
-generate-%: $(GOBIN)/interfacer $(GOBIN)/mockery
-	cd $(subst :,/,$*); go generate ./...; go run ../hack/license.go --license $(root_dir)/hack/boilerplate.txt --year $(YEAR) $(root_dir)
+.PHONY: tidy
+tidy:
+	@echo running go mod tidy...
+	@go mod tidy
 
-test-%:
-	cd $(subst :,/,$*); $(root_dir)/hack/test.sh
-
-pkg-%: generate-% tidy-% lint-% vet-% test-%;
-
-coverage.txt:
-	$(root_dir)/hack/test_pkg.sh
+.PHONY: check-worktree
+check-worktree:
+	@./hack/check_worktree.sh
+	
 
 $(GOBIN)/mockery:
 	GO111MODULE=on go get github.com/vektra/mockery/v2@v2.5.1
@@ -38,6 +40,3 @@ $(GOBIN)/mockery:
 
 $(GOBIN)/golangci-lint:
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.36.0
-
-$(GOBIN)/interfacer:
-	GO111MODULE=on go get github.com/rjeczalik/interfaces/cmd/interfacer@v0.1.1
