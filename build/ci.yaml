@@ -210,7 +210,7 @@ steps:
         only: [ "main" ]
       condition:
         any:
-          libCondition: '"${{steps.test.result}}"== "success" && "${{REPO_TYPE}}" != "lib"'
+          libCondition: '"${{steps.test.result}}"== "success" && "${{REPO_TYPE}}" == "lib"'
           binCondition: '"${{steps.test.build_binaries}}"== "success" && "${{steps.test.build}}"== "success"'
       steps:
       - name: build_binaries
