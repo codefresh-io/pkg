@@ -38,6 +38,14 @@ check-worktree:
 clean:
 	@echo cleaned 
 
+.PHONY: release
+release: tidy check-worktree fetch-tags
+	./hack/release.sh
+
+.PHONY: fetch-tags
+fetch-tags:
+	git fetch --tags
+
 .PHONY: pre-push
 pre-push:
 	@go mod download -x

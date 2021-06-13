@@ -213,6 +213,9 @@ steps:
       - name: test
         on:
         - success
+      - name: codegen
+        on:
+        - success
 
   create_release_bin:
     <<: *deps
