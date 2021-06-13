@@ -205,20 +205,29 @@ steps:
     - export GIT_REPO=${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
     - export GIT_BRANCH=${{CF_BRANCH}}
     - make release
-    when:
-      branch:
-        only: [ "main" ]
-      condition:
-        any:
-          libCondition: '"${{steps.test.result}}"== "success" && "${{REPO_TYPE}}" == "lib"'
-          binCondition: '"${{steps.test.build_binaries}}"== "success" && "${{steps.test.build}}"== "success"'
-      steps:
-      - name: build_binaries
-        on:
-        - success
-      - name: build
-        on:
-        - skipped
+    scale:
+      lib:
+        title: release-lib
+        when:
+          condition:
+            all:
+              isBinary: '"${{REPO_TYPE}}" != "lib"'
+          steps:
+          - name: test
+            on:
+            - success
+      bin:
+        title: release-bin
+        when:
+          branch:
+            only: [ "main" ]
+          steps:
+          - name: build_binaries
+            on:
+            - success
+          - name: build
+            on:
+            - skipped
         
   push_prod:
     stage: Release
