@@ -214,7 +214,7 @@ steps:
         on:
         - success
 
-  create_release_lib:
+  create_release_bin:
     <<: *deps
     stage: Release
     title: create github release - bin
