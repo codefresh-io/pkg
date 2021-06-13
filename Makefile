@@ -37,6 +37,13 @@ check-worktree:
 .PHONY: clean
 clean:
 	@echo cleaned 
+
+.PHONY: pre-push
+pre-push:
+	@go mod download -x
+	@make lint
+	@make codegen
+	@make check-worktree
 	
 
 $(GOBIN)/mockery:
