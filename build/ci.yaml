@@ -208,7 +208,7 @@ steps:
     when:
       condition:
         all:
-          isBinary: '"${{REPO_TYPE}}" != "lib"'
+          isBinary: '"${{REPO_TYPE}}" == "lib"'
       steps:
       - name: test
         on:
