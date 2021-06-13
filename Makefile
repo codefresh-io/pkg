@@ -32,6 +32,11 @@ tidy:
 .PHONY: check-worktree
 check-worktree:
 	@./hack/check_worktree.sh
+
+# noop - for ci
+.PHONY: clean
+clean:
+	@echo cleaned 
 	
 
 $(GOBIN)/mockery:
