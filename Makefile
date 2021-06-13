@@ -48,7 +48,6 @@ fetch-tags:
 
 .PHONY: pre-push
 pre-push:
-	@go mod download -x
 	@make lint
 	@make codegen
 	@make check-worktree
