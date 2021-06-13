@@ -208,15 +208,17 @@ steps:
     when:
       branch:
         only: [ "main" ]
+      condition:
+        any:
+          libCondition: '"${{steps.test.result}}"== "success" && "${{REPO_TYPE}}" != "lib"'
+          binCondition: '"${{steps.test.build_binaries}}"== "success" && "${{steps.test.build}}"== "success"'
       steps:
       - name: build_binaries
         on:
         - success
-        - skipped
       - name: build
         on:
         - skipped
-        - success
         
   push_prod:
     stage: Release
