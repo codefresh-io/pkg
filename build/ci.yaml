@@ -234,7 +234,7 @@ steps:
         - success
       - name: build
         on:
-        - skipped
+        - success
         
   push_prod:
     stage: Release
