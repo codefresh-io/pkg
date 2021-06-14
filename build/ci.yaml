@@ -249,7 +249,7 @@ steps:
         all:
           isBinary: '"${{REPO_TYPE}}" != "lib"'
       steps:
-      - name: create_release
+      - name: create_release_bin
         on:
         - success
       branch:
