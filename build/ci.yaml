@@ -26,6 +26,8 @@ steps:
     - cf_export GO111MODULE=on
     - cf_export GOCACHE=/codefresh/volume/gocache # change gopath to codefresh shared volume
     - cf_export GOPATH=/codefresh/volume/gopath
+    - cf_export GOPRIVATE=github.com/codefresh-io/argo-platform
+    - cf_export GOSUMDB=off
     - cf_export PATH=$PATH:/codefresh/volume/gopath/bin
     - cf_export LATEST_VERSION=$(curl --silent -H "Authorization:Bearer ${{GITHUB_TOKEN}}" "https://api.github.com/repos/${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
     - cf_export VERSION=$(make cur-version)
@@ -52,8 +54,7 @@ steps:
     stage: Prepare
     title: download modules
     commands:
-    - go env -w GOPRIVATE=github.com/codefresh-io/argo-platform
-    - GOSUMDB=off go mod tidy
+    - go mod tidy
     - make clean
     when:
       steps:
