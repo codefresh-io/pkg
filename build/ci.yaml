@@ -53,6 +53,7 @@ steps:
     title: download modules
     commands:
     - go env -w "GOPRIVATE=github.com/codefresh-io/argo-platform"
+    - go env GOSUMDB=off
     - go mod tidy
     - make clean
     when:
