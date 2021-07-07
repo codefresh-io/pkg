@@ -122,7 +122,7 @@ steps:
     buildkit: true
     disable_push: true
     build_arguments:
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_TOKEN=${{GITHUB_TOKEN}}
     when:
       condition:
         all:
