@@ -121,6 +121,8 @@ steps:
     tag: ${{CF_BRANCH_TAG_NORMALIZED}}
     buildkit: true
     disable_push: true
+    build_arguments:
+      -GITHUB_TOKEN=${GITHUB_TOKEN}
     when:
       condition:
         all:
