@@ -1,15 +1,14 @@
-version: '1.0'
+version: "1.0"
 mode: parallel
 
-stages: 
-- Prepare
-- Test
-- Build
-- Push Dev
-- Release
+stages:
+  - Prepare
+  - Test
+  - Build
+  - Push Dev
+  - Release
 
 steps:
-  
   main_clone:
     stage: Prepare
     title: clone repository
@@ -23,83 +22,83 @@ steps:
     title: prepare-env
     image: quay.io/codefresh/golang-ci-helper:latest
     commands:
-    - cf_export GO111MODULE=on
-    - cf_export GOCACHE=/codefresh/volume/gocache # change gopath to codefresh shared volume
-    - cf_export GOPATH=/codefresh/volume/gopath
-    - cf_export GOPRIVATE=github.com/codefresh-io/argo-platform
-    - cf_export GOSUMDB=off
-    - cf_export PATH=$PATH:/codefresh/volume/gopath/bin
-    - cf_export LATEST_VERSION=$(curl --silent -H "Authorization:Bearer ${{GITHUB_TOKEN}}" "https://api.github.com/repos/${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}/releases/latest" | jq -r ".tag_name")
-    - cf_export VERSION=$(make cur-version)
+      - cf_export GO111MODULE=on
+      - cf_export GOCACHE=/codefresh/volume/gocache # change gopath to codefresh shared volume
+      - cf_export GOPATH=/codefresh/volume/gopath
+      - cf_export GOPRIVATE=github.com/codefresh-io/argo-platform
+      - cf_export GOSUMDB=off
+      - cf_export PATH=$PATH:/codefresh/volume/gopath/bin
+      - cf_export LATEST_VERSION=$(curl --silent -H "Authorization:Bearer ${{GITHUB_TOKEN}}" "https://api.github.com/repos/${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}/releases/latest" | jq -r ".tag_name")
+      - cf_export VERSION=$(make cur-version)
     when:
       steps:
-      - name: main_clone
-        on:
-        - success
-  
-  compare_versions: 
+        - name: main_clone
+          on:
+            - success
+
+  compare_versions:
     stage: Prepare
     title: compare versions
     image: alpine/semver
     commands:
-    - semver "${{VERSION}}" -r ">${{LATEST_VERSION}}" || (echo "bump version! current is ${{VERSION}} latest is ${{LATEST_VERSION}}" && exit 1)
+      - semver "${{VERSION}}" -r ">${{LATEST_VERSION}}" || (echo "bump version! current is ${{VERSION}} latest is ${{LATEST_VERSION}}" && exit 1)
     when:
       steps:
-      - name: prepare_env_vars
-        on:
-        - success
+        - name: prepare_env_vars
+          on:
+            - success
 
   download_modules:
     <<: *deps
     stage: Prepare
     title: download modules
     commands:
-    - git config --global url."https://github:${GITHUB_TOKEN}@github.com".insteadOf  "https://github.com"
-    - go mod tidy
-    - make clean
+      - git config --global url."https://github:${GITHUB_TOKEN}@github.com".insteadOf  "https://github.com"
+      - go mod tidy
+      - make clean
     when:
       steps:
-      - name: compare_versions
-        on:
-        - success
+        - name: compare_versions
+          on:
+            - success
 
   lint:
     <<: *deps
     stage: Test
     title: lint
     commands:
-    - make lint
-    - make check-worktree
+      - make lint
+      - make check-worktree
     when:
       steps:
-      - name: download_modules
-        on:
-        - success
+        - name: download_modules
+          on:
+            - success
 
   codegen:
     <<: *deps
     stage: Test
     title: check codegen
     commands:
-    - make codegen
-    - make check-worktree
+      - make codegen
+      - make check-worktree
     when:
       steps:
-      - name: download_modules
-        on:
-        - success
+        - name: download_modules
+          on:
+            - success
 
   test:
     <<: *deps
     stage: Test
     title: run tests
     commands:
-    - make test
+      - make test
     when:
       steps:
-      - name: lint
-        on:
-        - success
+        - name: lint
+          on:
+            - success
 
   codecov-report:
     stage: Test
@@ -109,10 +108,10 @@ steps:
       codecov_integration: ${{CODECOV_INTEGRATION}}
     when:
       steps:
-      - name: test
-        on:
-        - success
-  
+        - name: test
+          on:
+            - success
+
   build:
     stage: Build
     title: build docker image
@@ -128,9 +127,9 @@ steps:
         all:
           isBinary: '"${{REPO_TYPE}}" != "lib"'
       steps:
-      - name: compare_versions
-        on:
-        - success
+        - name: compare_versions
+          on:
+            - success
 
   push_dev:
     stage: Push Dev
@@ -138,14 +137,14 @@ steps:
     type: push
     candidate: ${{build}}
     tags:
-    - dev-${{CF_BRANCH_TAG_NORMALIZED}}
+      - dev-${{CF_BRANCH_TAG_NORMALIZED}}
     when:
       steps:
-      - name: build
-        on:
-        - success
+        - name: build
+          on:
+            - success
       branch:
-        ignore: [ "main" ]
+        ignore: ["main"]
     scale:
       push_quay_dev:
         title: push to quay
@@ -156,32 +155,32 @@ steps:
     stage: Build
     title: build binaries
     commands:
-    - make ./dist/cf-${TARGET}.sha256 DEV_MODE=false
+      - make ./dist/cf-${TARGET}.sha256 DEV_MODE=false
     scale:
       linux_amd64:
         title: linux_amd64
         environment:
-         - TARGET=linux-amd64
+          - TARGET=linux-amd64
       linux_arm64:
         title: linux_arm64
         environment:
-         - TARGET=linux-arm64
+          - TARGET=linux-arm64
       linux_s390x:
         title: linux_s390x
         environment:
-         - TARGET=linux-s390x
+          - TARGET=linux-s390x
       linux_ppc64le:
         title: linux_ppc64le
         environment:
-         - TARGET=linux-ppc64le
+          - TARGET=linux-ppc64le
       windows_amd64:
         title: windows_amd64
         environment:
-         - TARGET=windows-amd64
+          - TARGET=windows-amd64
       darwin_amd64:
         title: darwin_amd64
         environment:
-         - TARGET=darwin-amd64
+          - TARGET=darwin-amd64
     retry:
       maxAttempts: 3
       delay: 1
@@ -190,75 +189,95 @@ steps:
         all:
           isBinary: '"${{REPO_TYPE}}" != "lib"'
       branch:
-        only: [ "main" ]
+        only: ["main"]
       steps:
-      - name: test
-        on:
-        - success
-      - name: codegen
-        on:
-        - success
-      - name: lint
-        on:
-        - success
-  
+        - name: test
+          on:
+            - success
+        - name: codegen
+          on:
+            - success
+        - name: lint
+          on:
+            - success
+
   create_release_lib:
     <<: *deps
     stage: Release
     title: create github release - lib
     commands:
-    - export GIT_REPO=${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
-    - export GIT_BRANCH=${{CF_BRANCH}}
-    - make release
+      - export GIT_REPO=${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
+      - export GIT_BRANCH=${{CF_BRANCH}}
+      - make release
     when:
       condition:
         all:
           isBinary: '"${{REPO_TYPE}}" == "lib"'
       steps:
-      - name: test
-        on:
-        - success
-      - name: codegen
-        on:
-        - success
+        - name: test
+          on:
+            - success
+        - name: codegen
+          on:
+            - success
 
   create_release_bin:
     <<: *deps
     stage: Release
     title: create github release - bin
     commands:
-    - export GIT_REPO=${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
-    - export GIT_BRANCH=${{CF_BRANCH}}
-    - make release
+      - export GIT_REPO=${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
+      - export GIT_BRANCH=${{CF_BRANCH}}
+      - make release
     when:
       branch:
-        only: [ "main" ]
+        only: ["main"]
       steps:
-      - name: build_binaries
-        on:
-        - success
-      - name: build
-        on:
-        - success
-        
+        - name: build_binaries
+          on:
+            - success
+        - name: build
+          on:
+            - success
+
+  bump_brew_formula:
+    stage: Release
+    title: bump brew formula version
+    image: linuxbrew/brew:latest
+    environment:
+      - HOMEBREW_GITHUB_API_TOKEN=${{GITHUB_TOKEN}}
+    commands:
+      - git config --global user.email "cfci.bot@codefresh.io"
+      - git config --global user.name "cf-ci-bot"
+      - brew bump-formula-pr --strict --no-browse --tag ${{CF_BRANCH_TAG_NORMALIZED}} --revision ${{CF_REVISION}} --fork-org codefresh-io ${{BREW_NAME}}
+    when:
+      steps:
+        - name: create_release_bin
+          on:
+            - success
+      condition:
+        all:
+          whenVarExists: 'includes("${{BREW_NAME}}", "{{BREW_NAME}}") == false'
+
+
   push_prod:
     stage: Release
     title: promote image
     type: push
     candidate: ${{build}}
     tags:
-    - latest
-    - ${{VERSION}}
+      - latest
+      - ${{VERSION}}
     when:
       condition:
         all:
           isBinary: '"${{REPO_TYPE}}" != "lib"'
       steps:
-      - name: create_release_bin
-        on:
-        - success
+        - name: create_release_bin
+          on:
+            - success
       branch:
-        only: [ "main" ]
+        only: ["main"]
     scale:
       push_quay:
         title: push to quay
