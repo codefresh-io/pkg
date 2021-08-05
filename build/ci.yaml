@@ -239,13 +239,18 @@ steps:
   bump_brew_formula:
     stage: Release
     title: bump brew formula version
-    image: linuxbrew/brew:latest
-    environment:
-      - HOMEBREW_GITHUB_API_TOKEN=${{GITHUB_TOKEN}}
+    image: codefresh/build-cli
     commands:
-      - git config --global user.email "cfci.bot@codefresh.io"
-      - git config --global user.name "cf-ci-bot"
-      - brew bump-formula-pr --strict --no-browse --tag ${{CF_BRANCH_TAG_NORMALIZED}} --revision ${{CF_REVISION}} --fork-org codefresh-io ${{BREW_NAME}}
+      - echo "generate formula from template ..."
+      - sed -e "s/${{VERSION}}}/$VERSION/g" -e "s/{{ revision }}/${{CF_REVISION}}/g" ./brew/template.rb > ${{BREW_NAME}}.rb
+      - echo "Updating file in GitHub"
+      - FORMULA_SHA256=$(curl -X GET https://api.github.com/repos/codefresh-io/homebrew-cli/contents/Formula/${{BREW_NAME}}.rb | jq .sha)
+      - |
+        curl -v -i -X PUT -H 'Authorization: token '$GITHUB_TOKEN'' -d "{ \
+          \"message\": \"update formula version $VERSION\", \
+          \"content\": \"$(openssl base64 -A -in ${{BREW_NAME}}.rb)\", \
+          \"sha\": $FORMULA_SHA256 \
+          }" https://api.github.com/repos/codefresh-io/homebrew-cli/contents/Formula/${{BREW_NAME}}.rb
     when:
       steps:
         - name: create_release_bin
