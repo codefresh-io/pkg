@@ -122,6 +122,7 @@ steps:
     disable_push: true
     build_arguments:
       - GITHUB_TOKEN=${{GITHUB_TOKEN}}
+      - SEGMENT_WRITE_KEY=${{SEGMENT_WRITE_KEY}}
     when:
       condition:
         all:
@@ -155,7 +156,7 @@ steps:
     stage: Build
     title: build binaries
     commands:
-      - make ./dist/cf-${TARGET}.sha256 DEV_MODE=false
+      - make ./dist/cf-${TARGET}.sha256 DEV_MODE=false SEGMENT_WRITE_KEY=${{SEGMENT_WRITE_KEY}}
     scale:
       linux_amd64:
         title: linux_amd64
