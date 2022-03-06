@@ -1,4 +1,4 @@
-VERSION?=0.0.12
+VERSION?=0.0.13
 YEAR?=$(shell date +"%Y")
 
 ifeq (,$(shell go env GOBIN))

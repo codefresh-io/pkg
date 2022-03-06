@@ -18,14 +18,9 @@ if [[ -z "$PRERELEASE" ]]; then
     PRERELEASE=false
 fi
 
-if [[ "$PRE_RELEASE" ]]; then
-    echo "using pre-release"
-    echo ""
-fi
-
-echo "gh release create --repo $GIT_REPO -t $VERSION -n $VERSION --prerelease=$PRERELEASE $VERSION"
 
 if [[ "$DRY_RUN" == "1" ]]; then
+    echo "gh release create --repo $GIT_REPO -t $VERSION -n $VERSION --prerelease=$PRERELEASE $VERSION"
     exit 0
 fi
 
